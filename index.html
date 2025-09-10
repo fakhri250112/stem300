@@ -251,19 +251,40 @@ function speak(text, lang = null) {
   if (!ttsEnabled) return;
   try {
     const msg = new SpeechSynthesisUtterance(text);
-    msg.lang = lang || userLang || 'en-US';
+
+    // set bahasa prioritas
+    msg.lang = lang || 'id-ID';   // paksa Indo dulu
     msg.rate = 1;
     msg.pitch = 1;
-    // choose voice that matches lang if possible
-    const voices = speechSynthesis.getVoices();
+
+    // load voices
+    let voices = speechSynthesis.getVoices();
+
     if (voices && voices.length) {
-      const v = voices.find(x => (msg.lang && x.lang && x.lang.startsWith(msg.lang.split('-')[0])) || /Google|Microsoft|Alexa|Samantha/i.test(x.name));
+      // cari voice Indonesia dulu
+      let v = voices.find(x => x.lang.startsWith('id'));
+      
+      // kalau nggak ada → fallback ke English yang umum (Google, Microsoft, dll)
+      if (!v) v = voices.find(x => /Google|Microsoft|Samantha|Alexa/i.test(x.name));
+
       if (v) msg.voice = v;
     }
+
+    // jangan langsung cancel + speak, biar natural
     speechSynthesis.cancel();
-    speechSynthesis.speak(msg);
-  } catch (e) { console.warn('TTS error', e); }
+    setTimeout(() => {
+      speechSynthesis.speak(msg);
+    }, 50);
+
+  } catch (e) {
+    console.warn('TTS error', e);
+  }
 }
+
+// supaya voices kebaca
+window.speechSynthesis.onvoiceschanged = () => {
+  console.log("Available voices:", speechSynthesis.getVoices());
+};
 
 ttsToggleWrap.addEventListener('click', ()=>{
   ttsEnabled = !ttsEnabled;
@@ -858,4 +879,5 @@ if ("serviceWorker" in navigator) {
 
 </body>
 </html>
+
 
