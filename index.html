@@ -251,24 +251,19 @@ function speak(text, lang = null) {
   if (!ttsEnabled) return;
   try {
     const msg = new SpeechSynthesisUtterance(text);
-
-    // set bahasa prioritas
-    msg.lang = lang || 'id-ID';   // paksa Indo dulu
+    msg.lang = lang || userLang || 'en-US';
     msg.rate = 1;
     msg.pitch = 1;
-
-    // load voices
-    let voices = speechSynthesis.getVoices();
-
+    // choose voice that matches lang if possible
+    const voices = speechSynthesis.getVoices();
     if (voices && voices.length) {
-      // cari voice Indonesia dulu
-      let v = voices.find(x => x.lang.startsWith('id'));
-      
-      // kalau nggak ada → fallback ke English yang umum (Google, Microsoft, dll)
-      if (!v) v = voices.find(x => /Google|Microsoft|Samantha|Alexa/i.test(x.name));
-
+      const v = voices.find(x => (msg.lang && x.lang && x.lang.startsWith(msg.lang.split('-')[0])) || /Google|Microsoft|Alexa|Samantha/i.test(x.name));
       if (v) msg.voice = v;
     }
+    speechSynthesis.cancel();
+    speechSynthesis.speak(msg);
+  } catch (e) { console.warn('TTS error', e); }
+}
 
     // jangan langsung cancel + speak, biar natural
     speechSynthesis.cancel();
@@ -879,5 +874,6 @@ if ("serviceWorker" in navigator) {
 
 </body>
 </html>
+
 
 
