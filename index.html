@@ -3,8 +3,7 @@
 <head>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#16a34a">
-<link rel="icon" href="icons/icon.png" type="image/png">
-
+<link rel="icon" href="icons/icon-192.png" type="image/png">
 
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -251,41 +250,19 @@ function speak(text, lang = null) {
   if (!ttsEnabled) return;
   try {
     const msg = new SpeechSynthesisUtterance(text);
-
-    // set bahasa prioritas
-    msg.lang = lang || 'id-ID';   // paksa Indo dulu
+    msg.lang = lang || userLang || 'en-US';
     msg.rate = 1;
     msg.pitch = 1;
-
-    // load voices
-    let voices = speechSynthesis.getVoices();
-
+    // choose voice that matches lang if possible
+    const voices = speechSynthesis.getVoices();
     if (voices && voices.length) {
-      // cari voice Indonesia dulu
-      let v = voices.find(x => x.lang.startsWith('id'));
-      
-      // kalau nggak ada → fallback ke English yang umum (Google, Microsoft, dll)
-      if (!v) v = voices.find(x => /Google|Microsoft|Samantha|Alexa/i.test(x.name));
-
+      const v = voices.find(x => (msg.lang && x.lang && x.lang.startsWith(msg.lang.split('-')[0])) || /Google|Microsoft|Alexa|Samantha/i.test(x.name));
       if (v) msg.voice = v;
     }
-
-    // jangan langsung cancel + speak, biar natural
     speechSynthesis.cancel();
-    setTimeout(() => {
-      speechSynthesis.speak(msg);
-    }, 50);
-
-  } catch (e) {
-    console.warn('TTS error', e);
-  }
+    speechSynthesis.speak(msg);
+  } catch (e) { console.warn('TTS error', e); }
 }
-
-// supaya voices kebaca
-window.speechSynthesis.onvoiceschanged = () => {
-  console.log("Available voices:", speechSynthesis.getVoices());
-};
-
 
 ttsToggleWrap.addEventListener('click', ()=>{
   ttsEnabled = !ttsEnabled;
@@ -870,14 +847,11 @@ setTimeout(()=>{
 }, 1200);
 
 </script>
-
-
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("service-worker.js")
+    .then(() => console.log("Service Worker registered"))
+    .catch(err => console.error("SW failed:", err));
+}
+</script>
 </body>
 </html>
-
-
-
-
-
-
-
