@@ -247,40 +247,21 @@ setInterval(updateClock, 1000);
 updateClock();
 
 /* TTS (Text-to-Speech) unified */
-function speak(text, lang = null) {
+function speak(text) {
   if (!ttsEnabled) return;
   try {
-    const msg = new SpeechSynthesisUtterance(text);
-
-    // set bahasa prioritas
-    msg.lang = lang || 'id-ID';   // paksa Indo dulu
-    msg.rate = 1;
-    msg.pitch = 1;
-
-    // load voices
-    let voices = speechSynthesis.getVoices();
-
+    const u = new SpeechSynthesisUtterance(text);
+    // choose a voice if available (try to pick a natural English voice)
+    const voices = speechSynthesis.getVoices();
     if (voices && voices.length) {
-      // cari voice Indonesia dulu
-      let v = voices.find(x => x.lang.startsWith('id'));
-      
-      // kalau nggak ada → fallback ke English yang umum (Google, Microsoft, dll)
-      if (!v) v = voices.find(x => /Google|Microsoft|Samantha|Alexa/i.test(x.name));
-
-      if (v) msg.voice = v;
+      const prefer = voices.find(v => /female|Google UK English|en-GB|en-US/i.test(v.name));
+      if (prefer) u.voice = prefer;
     }
-
-    // jangan langsung cancel + speak, biar natural
-    speechSynthesis.cancel();
-    setTimeout(() => {
-      speechSynthesis.speak(msg);
-    }, 50);
-
-  } catch (e) {
-    console.warn('TTS error', e);
-  }
+    u.rate = 1;
+    speechSynthesis.cancel(); // avoid overlap
+    speechSynthesis.speak(u);
+  } catch (e) { console.warn('TTS error', e); }
 }
-
 // supaya voices kebaca
 window.speechSynthesis.onvoiceschanged = () => {
   console.log("Available voices:", speechSynthesis.getVoices());
@@ -897,6 +878,7 @@ if ("serviceWorker" in navigator) {
 
 </body>
 </html>
+
 
 
 
